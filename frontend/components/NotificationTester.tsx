@@ -1,12 +1,12 @@
+import * as Notifications from 'expo-notifications';
 import React, { useState } from 'react';
 import {
+    Alert,
     StyleSheet,
     Text,
     View,
-    Alert,
 } from 'react-native';
-import { Button, Card, TextInput, Chip } from 'react-native-paper';
-import * as Notifications from 'expo-notifications';
+import { Button, Card, Chip, TextInput } from 'react-native-paper';
 
 const NotificationTester: React.FC = () => {
     const [title, setTitle] = useState('Medical Alert');

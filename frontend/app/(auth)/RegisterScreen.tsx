@@ -1,22 +1,22 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-} from "react-native";
-import React, { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { TextInput, Button } from "react-native-paper";
 import RNDateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import axios from "axios";
 import { useRouter } from "expo-router"; // <-- CHANGED BACK TO useRouter
+import React, { useState } from "react";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Button, TextInput } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Define the possible roles for clearer typing
 type UserRole = "emo" | "clinician" | "radiologist";
@@ -24,7 +24,7 @@ type UserRole = "emo" | "clinician" | "radiologist";
 // --- PLACEHOLDER AUTH SERVICE (Adapting from previous axios structure) ---
 // NOTE: In a real app, this would live in a separate file (e.g., ../services/authService.ts)
 // Replace 192.168.1.100 with your computer's actual IP address
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.100:5000/api";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://13.53.218.254/api";
 
 const authService = {
   register: async (data: any) => {

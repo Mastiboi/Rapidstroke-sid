@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
+    Alert,
+    Modal,
+    RefreshControl,
+    TextInput as RNTextInput,
+    ScrollView,
     StyleSheet,
     Text,
-    View,
-    ScrollView,
-    Alert,
     TouchableOpacity,
-    RefreshControl,
-    Modal,
-    TextInput as RNTextInput
+    View
 } from 'react-native';
-import { TextInput, Button, Card, Chip, Badge } from 'react-native-paper';
+import { Badge, Button, Card, Chip, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import axios from 'axios';
-import { getAuthToken } from '../../utils/auth';
 import NotificationTester from '../../components/NotificationTester';
+import { getAuthToken } from '../../utils/auth';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.100:5000/api";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://13.53.218.254/api";
 
 interface MedicalAlert {
     alertId: string;
