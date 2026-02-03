@@ -1,11 +1,11 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.100:5000/api";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://13.53.218.254/api";
 
 // Configure notification behavior
 Notifications.setNotificationHandler({

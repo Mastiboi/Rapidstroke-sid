@@ -1,23 +1,23 @@
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from "axios";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { TextInput, Button, Card } from "react-native-paper";
-import React, { useState } from "react";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Button, Card, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from "axios";
 
 // Define the API base URL (Replace with your computer's IP address)
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.100:5000/api";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://13.53.218.254/api";
 
 // --- PLACEHOLDER AUTH SERVICE (Matching the structure used in RegisterScreen) ---
 const authService = {
