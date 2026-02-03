@@ -14,7 +14,8 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/gmch_logo.png"
+        "foregroundImage": "./assets/images/gmch_logo.png",
+        "usesCleartextTraffic": true
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
