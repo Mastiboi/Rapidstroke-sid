@@ -1,7 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router"; // <-- Expo Router Imports
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router"; // <-- Expo Router Imports
 
 interface UserData {
   name: string;

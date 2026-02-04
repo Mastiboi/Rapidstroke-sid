@@ -70,7 +70,7 @@ export const registerForPushNotificationsAsync = async () => {
             }
 
             token = (await Notifications.getExpoPushTokenAsync({
-                projectId: 'rapidstroke-medical-app',
+                projectId: 'c2f29831-f572-46c2-94c8-36ab28c7b9f9',
             })).data;
 
             console.log('Expo push token:', token);
