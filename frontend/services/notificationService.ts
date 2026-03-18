@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -18,7 +18,7 @@ Notifications.setNotificationHandler({
     }),
 });
 
-export const registerForPushNotificationsAsync = async () => {
+export const registerForPushNotificationsAsync = async (authToken?: string) => {
     let token;
 
     if (Platform.OS === 'android') {
@@ -57,37 +57,33 @@ export const registerForPushNotificationsAsync = async () => {
 
         // Get the push token
         try {
-            // Check if running in Expo Go
-            const isExpoGo = Constants.executionEnvironment === 'storeClient';
+            // Check if running in Expo Go — never attempt real push tokens there
+            const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
             if (isExpoGo) {
                 console.warn('Push notifications are not available in Expo Go. Please use a development build.');
-                // Store a mock token for development
-                const mockToken = 'mock-expo-push-token-for-development';
-                await AsyncStorage.setItem('expoPushToken', mockToken);
-                console.log('Using mock token for Expo Go development:', mockToken);
-                return mockToken;
+                return null;
             }
 
+            // Always re-register on every launch so that a fresh install (e.g. switching
+            // from dev build → preview build on the same device) gets a new valid token
+            // and immediately syncs it to the backend, replacing any stale cached token.
             token = (await Notifications.getExpoPushTokenAsync({
                 projectId: 'c2f29831-f572-46c2-94c8-36ab28c7b9f9',
             })).data;
 
             console.log('Expo push token:', token);
 
-            // Store token locally
+            // Persist token locally (for reference / offline use)
             await AsyncStorage.setItem('expoPushToken', token);
 
-            // Send token to backend
-            await updatePushTokenOnServer(token);
+            // Always sync the (possibly new) token to the backend
+            await updatePushTokenOnServer(token, authToken);
 
         } catch (error) {
             console.error('Error getting push token:', error);
-            console.warn('Falling back to mock token for development');
-            // Fallback to mock token for development
-            const mockToken = 'mock-expo-push-token-for-development';
-            await AsyncStorage.setItem('expoPushToken', mockToken);
-            return mockToken;
+            // Do not fall back to a mock token — return null so callers know registration failed
+            return null;
         }
     } else {
         alert('Must use physical device for Push Notifications');
@@ -96,10 +92,15 @@ export const registerForPushNotificationsAsync = async () => {
     return token;
 };
 
-export const updatePushTokenOnServer = async (token: string) => {
+export const updatePushTokenOnServer = async (token: string, authToken?: string) => {
     try {
-        const userToken = await AsyncStorage.getItem('userToken');
-        if (!userToken) return;
+        // Use the explicitly provided authToken first (e.g. right after login before
+        // AsyncStorage is populated), then fall back to what's persisted on disk.
+        const userToken = authToken ?? await AsyncStorage.getItem('userToken');
+        if (!userToken) {
+            console.warn('updatePushTokenOnServer: no auth token available, skipping');
+            return;
+        }
 
         await axios.post(`${API_BASE_URL}/auth/update-push-token`, {
             expoPushToken: token
@@ -144,8 +145,8 @@ export const setupNotificationListeners = () => {
     });
 
     return () => {
-        Notifications.removeNotificationSubscription(notificationListener);
-        Notifications.removeNotificationSubscription(responseListener);
+        notificationListener?.remove();
+        responseListener?.remove();
     };
 };
 

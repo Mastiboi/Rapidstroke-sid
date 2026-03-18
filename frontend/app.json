@@ -13,7 +13,6 @@
       "bundleIdentifier": "com.papai22.frontend"
     },
     "android": {
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/gmch_logo.png"
@@ -29,6 +28,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       "expo-notifications",
       [
         "expo-splash-screen",

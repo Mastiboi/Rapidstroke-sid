@@ -34,8 +34,8 @@ export interface IUser extends MongoDocument {
   phone?: string;
   specialization?: string; // For clinicians and radiologists
 
-  // Expo push token for notifications
-  expoPushToken?: string;
+  // Expo push tokens for notifications
+  expoPushTokens?: string[];
 
   // Notification preferences
   notificationPreferences: {

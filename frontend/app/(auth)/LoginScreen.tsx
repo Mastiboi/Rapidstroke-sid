@@ -15,9 +15,12 @@ import {
 } from "react-native";
 import { Button, Card, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { registerForPushNotificationsAsync } from "../../services/notificationService";
 
 // Define the API base URL (Replace with your computer's IP address)
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://13.53.218.254/api";
+console.log("API URL =", process.env.EXPO_PUBLIC_API_URL);
+console.log("Trying to reach backend...");
 
 // --- PLACEHOLDER AUTH SERVICE (Matching the structure used in RegisterScreen) ---
 const authService = {
@@ -139,6 +142,13 @@ const LoginScreen: React.FC<{}> = () => {
         ["userToken", token],
         ["userData", JSON.stringify(userData)],
       ]);
+
+      // Register this device's push token immediately after login, passing the
+      // fresh JWT directly so we don't race with AsyncStorage propagation.
+      // This is fire-and-forget — we don't block navigation on it.
+      registerForPushNotificationsAsync(token).catch((err) =>
+        console.warn("Push token registration failed after login:", err)
+      );
 
       Alert.alert("Success", "Login successful!");
 

@@ -1,7 +1,8 @@
-import Notification from '../models/Notification.ts';
-import User from '../models/User.ts';
+import type { ExpoPushMessage } from 'expo-server-sdk';
 import { Expo } from 'expo-server-sdk';
-import type { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
+import Notification, { type INotification } from '../models/Notification.ts';
+import User from '../models/User.ts';
+import type { IUser } from '../types.ts';
 
 // Create a new Expo SDK client
 const expo = new Expo();
@@ -104,17 +105,35 @@ export const sendNotification = async (notificationData: NotificationData) => {
 /**
  * Send push notification via Expo
  */
-const sendPushNotification = async (user: any, notification: any) => {
+const sendPushNotification = async (user: IUser, notification: INotification) => {
     try {
-        // Check if user has a valid Expo push token
-        if (!user.expoPushToken || !Expo.isExpoPushToken(user.expoPushToken)) {
-            console.log(`User ${user.name} does not have a valid Expo push token`);
+        // Check if user has valid Expo push tokens
+        const tokens = user.expoPushTokens || [];
+        if (tokens.length === 0) {
+            console.log(`User ${user.name} does not have any Expo push tokens registered`);
             return;
         }
 
-        // Create the message
-        const message: ExpoPushMessage = {
-            to: user.expoPushToken,
+        // Filter valid tokens and handle mock tokens
+        const validTokens = tokens.filter((token: string) => {
+            if (typeof token === 'string' && token.includes('mock-expo-push-token')) {
+                console.warn(`User ${user.name} has a mock Expo push token (development): ${token}`);
+                return false;
+            }
+            if (!Expo.isExpoPushToken(token)) {
+                console.warn(`User ${user.name} has an invalid Expo push token: ${token}`);
+                return false;
+            }
+            return true;
+        });
+
+        if (validTokens.length === 0) {
+            return;
+        }
+
+        // Create the messages for all valid tokens
+        const messages: ExpoPushMessage[] = validTokens.map((token: string) => ({
+            to: token,
             sound: 'default',
             title: notification.title,
             body: notification.message,
@@ -128,28 +147,33 @@ const sendPushNotification = async (user: any, notification: any) => {
             },
             priority: notification.priority === 'urgent' ? 'high' : 'normal',
             channelId: notification.priority === 'urgent' ? 'urgent-alerts' : 'default'
-        };
+        }));
 
-        // Send the push notification
-        const tickets = await expo.sendPushNotificationsAsync([message]);
+        // Send the push notifications
+        const ticketChunks = await expo.sendPushNotificationsAsync(messages);
 
-        // Update notification record with ticket info
+        // Flatten tickets (as expo-server-sdk handles chunking)
+        const tickets = ticketChunks;
+
+        // Update notification record with ticket information
         notification.channels.push.sent = true;
         notification.channels.push.sentAt = new Date();
 
-        // Store the ticket ID for later receipt checking
+        // Store first ticket ID for compatibility or handle multiple if model supports it
+        // For simplicity, we'll store the first one if it exists, or improve the model later
         if (tickets[0] && tickets[0].status === 'ok' && 'id' in tickets[0]) {
             notification.channels.push.ticketId = tickets[0].id;
-            console.log(`Push notification sent with ticket ID: ${tickets[0].id}`);
-        } else if (tickets[0] && tickets[0].status === 'error') {
-            notification.channels.push.error = (tickets[0] as any).message || 'Unknown error';
-            // Set up retry
-            notification.nextRetryAt = calculateNextRetryTime(notification.retryCount);
-            console.error(`Push notification error: ${notification.channels.push.error}`);
+        }
+
+        // If any ticket failed, log it
+        const failures = tickets.filter(t => t.status === 'error');
+        if (failures.length > 0) {
+            console.error(`Some push notifications failed for ${user.name}:`, failures);
+            notification.channels.push.error = (failures[0] as any).message || 'One or more notifications failed';
         }
 
         await notification.save();
-        console.log(`Expo push notification sent to ${user.name}`);
+        console.log(`Expo push notifications sent to ${user.name} (${validTokens.length} devices)`);
 
     } catch (error) {
         console.error('Expo push notification error:', error);
@@ -169,7 +193,7 @@ const sendPushNotification = async (user: any, notification: any) => {
 /**
  * Send SMS notification
  */
-const sendSMSNotification = async (user: any, notification: any) => {
+const sendSMSNotification = async (user: IUser, notification: INotification) => {
     try {
         // Placeholder for SMS service integration (Twilio, AWS SNS, etc.)
         // You'll need to implement actual SMS sending logic here
@@ -178,7 +202,7 @@ const sendSMSNotification = async (user: any, notification: any) => {
 
         notification.channels.sms.sent = true;
         notification.channels.sms.sentAt = new Date();
-        notification.channels.sms.phoneNumber = user.phone;
+        notification.channels.sms.phoneNumber = user.phone || '';
 
         await notification.save();
     } catch (error) {
@@ -191,7 +215,7 @@ const sendSMSNotification = async (user: any, notification: any) => {
 /**
  * Send email notification
  */
-const sendEmailNotification = async (user: any, notification: any) => {
+const sendEmailNotification = async (user: IUser, notification: INotification) => {
     try {
         // Placeholder for email service integration (SendGrid, AWS SES, etc.)
         // You'll need to implement actual email sending logic here
@@ -342,8 +366,12 @@ export const checkPushNotificationReceipts = async () => {
 
                         // Handle specific error types
                         if ((receipt as any).details?.error === 'DeviceNotRegistered') {
-                            // Don't retry - device is unregistered
-                            console.warn(`Device unregistered for notification ${notification.notificationId}`);
+                            // Device is unregistered - remove this token from the user
+                            const ticketId = notification.channels.push.ticketId;
+                            console.warn(`Device unregistered for notification ${notification.notificationId}. Attempting cleanup...`);
+
+                            // Since we currently only store one ticketId, we'll log it for now.
+                            // To remove specific token, we'd need to store the mapping in the Notification model.
                         } else if (notification.retryCount < notification.maxRetries) {
                             // Set up retry for retriable errors
                             notification.retryCount += 1;
