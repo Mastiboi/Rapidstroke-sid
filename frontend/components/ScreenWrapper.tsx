@@ -1,13 +1,11 @@
-import {
-  StyleSheet,
-  View,
-  Text,
-  Platform,
-  Dimensions,
-  StatusBar,
-} from "react-native";
-import React from "react";
 import { ScreenWrapperProps } from "@/types";
+import {
+  Dimensions,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  View
+} from "react-native";
 
 const { height } = Dimensions.get("window");
 

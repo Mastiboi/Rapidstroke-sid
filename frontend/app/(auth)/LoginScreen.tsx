@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -15,9 +15,12 @@ import {
 } from "react-native";
 import { Button, Card, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { registerForPushNotificationsAsync } from "../../services/notificationService";
 
 // Define the API base URL (Replace with your computer's IP address)
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://13.53.218.254/api";
+console.log("API URL =", process.env.EXPO_PUBLIC_API_URL);
+console.log("Trying to reach backend...");
 
 // --- PLACEHOLDER AUTH SERVICE (Matching the structure used in RegisterScreen) ---
 const authService = {
@@ -97,60 +100,85 @@ const LoginScreen: React.FC<{}> = () => {
     return true;
   };
 
+  const loginInProgress = useRef(false);
+
   const handleLogin = async () => {
+    // 🔒 Hard guard: prevent multiple calls
+    if (loginInProgress.current) {
+      console.log("Login already in progress, skipping");
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
 
+    loginInProgress.current = true;
     setLoading(true);
 
     try {
       console.log("Attempting login...");
+      console.log("API URL:", process.env.EXPO_PUBLIC_API_URL);
+
       const response = await authService.login({ email, password });
 
-      if (response.success) {
-        const userData = response.data?.data?.user;
-        const token = response.data?.data?.token;
-        console.log("User data for routing:", userData);
-
-        // Store token and user data
-        if (token) {
-          await AsyncStorage.setItem('userToken', token);
-          await AsyncStorage.setItem('userData', JSON.stringify(userData));
-        }
-
-        Alert.alert("Success", "Login successful!");
-
-        // Role-based routing
-        if (userData?.role === "emo") {
-          console.log("Routing to EMO Dashboard");
-          router.replace("./EMODashboard");
-        } else if (userData?.role === "clinician") {
-          console.log("Routing to Clinician Dashboard");
-          router.replace("./ClinicianDashboard");
-        } else if (userData?.role === "radiologist") {
-          console.log("Routing to Radiologist Dashboard");
-          router.replace("./RadiologistDashboard");
-        } else {
-          console.warn("Unknown role, defaulting to EMO dashboard:", userData?.role);
-          router.replace("./EMODashboard");
-        }
-      } else {
+      if (!response?.success) {
         Alert.alert(
           "Login Failure",
-          response.message || "Invalid credentials. Please try again."
+          response?.message || "Invalid credentials. Please try again."
         );
+        return;
+      }
+
+      const userData = response.data?.data?.user;
+      const token = response.data?.data?.token;
+
+      if (!userData || !token) {
+        throw new Error("Invalid login response structure");
+      }
+
+      // Persist auth
+      await AsyncStorage.multiSet([
+        ["userToken", token],
+        ["userData", JSON.stringify(userData)],
+      ]);
+
+      // Register this device's push token immediately after login, passing the
+      // fresh JWT directly so we don't race with AsyncStorage propagation.
+      // This is fire-and-forget — we don't block navigation on it.
+      registerForPushNotificationsAsync(token).catch((err) =>
+        console.warn("Push token registration failed after login:", err)
+      );
+
+      Alert.alert("Success", "Login successful!");
+
+      // ✅ Role-based routing (absolute paths for expo-router)
+      switch (userData.role) {
+        case "emo":
+          router.replace("/EMODashboard");
+          break;
+        case "clinician":
+          router.replace("/ClinicianDashboard");
+          break;
+        case "radiologist":
+          router.replace("/RadiologistDashboard");
+          break;
+        default:
+          console.warn("Unknown role:", userData.role);
+          router.replace("/EMODashboard");
       }
     } catch (error) {
+      console.error("Login exception:", error);
       Alert.alert(
         "Connection Error",
         "Unable to connect to server or unexpected network issue."
       );
-      console.error("Login exception:", error);
     } finally {
+      loginInProgress.current = false;
       setLoading(false);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>

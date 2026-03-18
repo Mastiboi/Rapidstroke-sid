@@ -1,5 +1,5 @@
-import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import mongoose, { Schema } from 'mongoose';
 import * as types from '../types.ts';
 
 type IUser = types.IUser;
@@ -74,9 +74,9 @@ const userSchema = new Schema<IUser>({
     type: String,
     trim: true
   },
-  expoPushToken: {
-    type: String,
-    sparse: true // Allows multiple null values but unique non-null values
+  expoPushTokens: {
+    type: [String],
+    default: []
   },
   notificationPreferences: {
     push: {

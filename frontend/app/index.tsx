@@ -1,19 +1,16 @@
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import {
   Image,
-  StatusBar,
-  TouchableOpacity,
   StyleSheet,
   Text,
-  View,
+  TouchableOpacity,
+  View
 } from "react-native";
-import React, { use } from "react";
-import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { Card } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "@/constants/theme";
 
-const SplashScreen = () => {
+const LandingScreen = () => {
   const router = useRouter();
   return (
     <SafeAreaView style={styles.container}>
@@ -83,7 +80,7 @@ const SplashScreen = () => {
   );
 };
 
-export default SplashScreen;
+export default LandingScreen;
 
 const styles = StyleSheet.create({
   container: {

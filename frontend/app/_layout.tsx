@@ -1,6 +1,5 @@
-import React from "react";
 import { Stack } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 import NotificationSetup from "../components/NotificationSetup";
 
 const _layout = () => {

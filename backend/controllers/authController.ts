@@ -1,7 +1,7 @@
 import * as express from 'express';
 import User from '../models/User.ts';
-import { generateToken } from '../utils/jwt.ts';
 import * as types from '../types.ts';
+import { generateToken } from '../utils/jwt.ts';
 
 type RegisterRequest = types.RegisterRequest;
 type LoginRequest = types.LoginRequest;
@@ -230,16 +230,9 @@ export const updatePushToken = async (req: AuthenticatedRequest, res: Response) 
       });
     }
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    user.expoPushToken = expoPushToken;
-    await user.save();
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { expoPushTokens: expoPushToken }
+    });
 
     res.status(200).json({
       success: true,
